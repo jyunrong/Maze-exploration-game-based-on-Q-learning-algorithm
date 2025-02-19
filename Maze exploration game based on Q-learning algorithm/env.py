@@ -1,5 +1,5 @@
 """
-Q Learning 例子的 Maze（迷宫） 环境
+Q Learning Maze
 黄色圆形 :   机器人
 红色方形 :   炸弹     [reward = -1]
 绿色方形 :   宝藏     [reward = +1]
@@ -11,9 +11,9 @@ import time
 import numpy as np
 import tkinter as tk
 
-WIDTH = 6   # 迷宫的宽度
-HEIGHT = 6  # 迷宫的高度
-UNIT = 40   # 每个方块的大小（像素值）
+WIDTH = 6
+HEIGHT = 6
+UNIT = 40
 
 
 class Maze(tk.Tk, object):
@@ -24,6 +24,43 @@ class Maze(tk.Tk, object):
         self.title('Q Learning')
         self.geometry('{0}x{1}'.format(WIDTH * UNIT, HEIGHT * UNIT))  # Tkinter 的几何形状
         self.build_maze()
+
+    def step(self, action):
+        s = self.canvas.coords(self.robot)
+        base_action = np.array([0, 0])
+        if action == 0:  # 上
+            if s[1] > UNIT:
+                base_action[1] -= UNIT
+        elif action == 1:  # 下
+            if s[1] < (HEIGHT - 1) * UNIT:
+                base_action[1] += UNIT
+        elif action == 2:  # 右
+            if s[0] < (WIDTH - 1) * UNIT:
+                base_action[0] += UNIT
+        elif action == 3:  # 左
+            if s[0] > UNIT:
+                base_action[0] -= UNIT
+
+        self.canvas.move(self.robot, base_action[0], base_action[1])
+
+        s_ = self.canvas.coords(self.robot)
+
+        if s_ == self.canvas.coords(self.treasure):
+            reward = 1
+            done = 1
+            s_ = 'terminal'
+            print("WIN!")
+        elif s_ == self.canvas.coords(self.bomb1) or s_ == self.canvas.coords(self.bomb2) or s_ == self.canvas.coords(
+                self.bomb3):
+            reward = -1
+            done = 0
+            s_ = 'terminal'
+            print("Bomb! GAME OVER!")
+        else:
+            reward = 0
+            done = 2
+
+        return self._discretize_state(s_), reward, done
 
     def build_maze(self):
         self.canvas = tk.Canvas(self, bg='white',
@@ -71,6 +108,10 @@ class Maze(tk.Tk, object):
 
         self.canvas.pack()
 
+    def render(self):
+        time.sleep(0.1)
+        self.update()
+
     def reset(self):
         self.update()
         time.sleep(0.5)
@@ -99,50 +140,7 @@ class Maze(tk.Tk, object):
         self.canvas.delete(self.message_box)
         self.canvas.delete(background)
 
-    def step(self, action):
-        s = self.canvas.coords(self.robot)
-        base_action = np.array([0, 0])
-        if action == 0:  # 上
-            if s[1] > UNIT:
-                base_action[1] -= UNIT
-        elif action == 1:  # 下
-            if s[1] < (HEIGHT - 1) * UNIT:
-                base_action[1] += UNIT
-        elif action == 2:  # 右
-            if s[0] < (WIDTH - 1) * UNIT:
-                base_action[0] += UNIT
-        elif action == 3:  # 左
-            if s[0] > UNIT:
-                base_action[0] -= UNIT
 
-        # 移动机器人
-        self.canvas.move(self.robot, base_action[0], base_action[1])
-
-        # 下一个 state
-        s_ = self.canvas.coords(self.robot)
-
-        # 奖励机制
-        if s_ == self.canvas.coords(self.treasure):
-            reward = 1
-            done = 1
-            s_ = 'terminal'
-            print("WIN!")
-        elif s_ == self.canvas.coords(self.bomb1) or s_ == self.canvas.coords(self.bomb2) or s_ == self.canvas.coords(
-                self.bomb3):
-            reward = -1
-            done = 0
-            s_ = 'terminal'
-            print("Bomb! GAME OVER!")
-        else:
-            reward = 0
-            done = 2
-
-        # 返回离散化的网格编号
-        return self._discretize_state(s_), reward, done
-
-    def render(self):
-        time.sleep(0.1)
-        self.update()
 
     def _discretize_state(self, coords):
         if coords == 'terminal':

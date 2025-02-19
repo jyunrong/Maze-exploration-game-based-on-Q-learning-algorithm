@@ -1,7 +1,3 @@
-"""
-游戏的主程序，调用机器人的 Q learning 决策大脑 和 Maze 环境
-"""
-
 from env import Maze
 from q_learning import QLearning
 
@@ -16,16 +12,13 @@ def update():
         step_count = 0
         while True:
             env.render()
-            # RL 大脑根据 state 挑选 action
             action = RL.choose_action(str(state))
-            # 探索者在环境中实施这个 action, 并得到环境返回的下一个 state, reward 和 done (是否是踩到炸弹或者找到宝藏)
             state_, reward, done = env.step(action)
 
             step_count += 1
             RL.learn(str(state), action, reward, str(state_))
             state = state_
 
-            # 如果踩到炸弹或者找到宝藏, 回合结束
             if done==0 or done==1:
                 print("Round {} end. Total step: {}\n".format(episode+1, step_count))
                 s="Round {} end. Total step: {}\n".format(episode+1, step_count)
@@ -59,5 +52,3 @@ if __name__ == "__main__":
 
     print('\nQ Table:')
     print(RL.q_table)
-
-
